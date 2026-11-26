@@ -441,9 +441,9 @@ async function ask(question, auto){
       area_manager:areaManager(live.hist),defences_context:{note:DEFENCES_NOTE+" Static snapshot, not live. Context only; does not change the ranking.",towns:DEFENCES},history_summary:Object.fromEntries(Object.entries(live.hist.towns).map(([k,h])=>[k,{river:h.river,lat:h.lat,lon:h.lon,mean:h.mean,p95:h.p95,p99:h.p99,events_by_winter:h.events_by_winter}]))};
     const msgs=[...history.slice(-4),{role:"user",content:`QUESTION: ${question}\n\nFACTS (JSON, computed live by code):\n${JSON.stringify(facts)}`}];
     bot.innerHTML='<span class="dots2"><i></i><i></i><i></i></span> asking the AI…';
-    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:$("model").value.trim()||"claude-haiku-5-5",max_tokens:1800,system:SYSTEM,messages:msgs})});
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:$("model").value.trim()||"claude-haiku-5-5",max_tokens:4000,system:SYSTEM,messages:msgs})});
     const data=await res.json(); if(!res.ok) throw new Error("AI provider: "+(data.error?.message||res.status));
-    const text=data.content.filter(b=>b.type==="text").map(b=>b.text).join("\n");
+    const text=data.content.filter(b=>b.type==="text").map(b=>b.text).join("\n")+(data.stop_reason==="max_tokens"?"\n\n[Answer cut off at the length limit – ask a narrower question.]":"");
     history.push({role:"user",content:`QUESTION: ${question}`},{role:"assistant",content:text});
     const u=data.usage||{}, cost=((u.input_tokens||0)*PRICE_IN+(u.output_tokens||0)*PRICE_OUT)/1e6, n=(+localStorage.getItem("rw_count")||0)+1; localStorage.setItem("rw_count",n);
     bot.innerHTML=md(text)+`<div class="meta">Data read ${esc(live.fetchedAt.toLocaleTimeString())} · tokens ${u.input_tokens}/${u.output_tokens} · ≈ $${cost.toFixed(5)} this answer · ${n} question(s) from this browser · full working below</div>`;
