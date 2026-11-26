@@ -46,6 +46,7 @@ main{padding:16px 20px;max-width:1300px;margin:auto}footer{padding:20px;color:va
 .chatform{display:flex;gap:6px;align-items:center}
 input,select{background:#0e1a2b;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px;font:inherit}.chatform input{flex:1;margin:0}
 button.act{padding:8px 14px;border-radius:6px;border:0;cursor:pointer;font-size:14px;background:#3a4e75;color:#fff}button.act.p{background:var(--acc);color:#0e1a2b;font-weight:700}button:disabled{opacity:.5}
+.msg.stale{opacity:.55}.stalebadge{color:var(--sby);font-size:12px;font-weight:700;margin-bottom:4px}.msg.sys{background:none;border:1px dashed var(--line);color:var(--mute);font-size:12px}
 .dots2 i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--mute);margin-right:4px;animation:bl 1s infinite}.dots2 i:nth-child(2){animation-delay:.2s}.dots2 i:nth-child(3){animation-delay:.4s}@keyframes bl{50%{opacity:.2}}
 table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:5px 8px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--mute);font-weight:600}
 .tw{overflow-x:auto}.mute{color:var(--mute)}.err{color:#ff8b8b;font-weight:600}
@@ -92,7 +93,8 @@ details{margin-top:6px}summary{cursor:pointer;color:var(--acc);font-size:13px}
       </div>
       <div class="msgs" id="msgs"></div>
       <div class="chatform"><input id="q" type="text" placeholder="Ask about tonight's plan, a town, or the study priority…"><button class="act p" id="ask">Ask</button><button class="act" id="refresh" title="Re-read Sheet, forecasts and warnings, without the AI">↻ Refresh plan</button></div>
-      <div id="status" class="mute" style="margin-top:6px;font-size:13px"></div>
+      <label class="mute" style="display:block;margin-top:8px;font-size:13px"><input type="checkbox" id="autoq" checked> Re-answer my last question automatically when the Sheet changes (uses a few tokens)</label>
+      <div id="status" class="mute" style="margin-top:6px;font-size:13px"></div><div id="poll" class="mute" style="font-size:12px"></div>
     </div>
     <div class="card"><h2>Working (computed by code from live data)</h2><div id="working" class="mute">Waiting for data…</div></div>
   </section>
@@ -124,6 +126,7 @@ const FLOOD_URL = "https://flood-api.open-meteo.com/v1/flood";
 const COUNTY_CODE = {Carlow:"EI01",Cavan:"EI02",Clare:"EI03",Cork:"EI04",Donegal:"EI06",Dublin:"EI07",Galway:"EI10",Kerry:"EI11",Kildare:"EI12",Kilkenny:"EI13",Leitrim:"EI14",Laois:"EI15",Limerick:"EI16",Longford:"EI18",Louth:"EI19",Mayo:"EI20",Meath:"EI21",Monaghan:"EI22",Offaly:"EI23",Roscommon:"EI24",Sligo:"EI25",Tipperary:"EI26",Waterford:"EI27",Westmeath:"EI29",Wexford:"EI30",Wicklow:"EI31"};
 const CREW_AREAS = {Clonmel:["Clonmel","Fermoy","Enniscorthy"],Mallow:["Mallow","Fermoy","Bandon"],Athlone:["Athlone","Carrick-on-Shannon","Ennis"]};
 const LEVELS = ["Normal","Standby","Barriers"];
+const POLL_MS = window.RW_POLL_MS || 15000;
 const FLOODINFO = "https://www.floodinfo.ie/scheme-info/", FLOODMAPS="https://www.floodinfo.ie/map/floodmaps/";
 const DEFENCES_NOTE = "OPW Flood Relief Scheme Information (floodinfo.ie/scheme-info, page updated 3 Nov 2026), snapshot checked 26 Nov 2026. Contains Office of Public Works information © Office of Public Works.";
 const DEFENCES = {
@@ -170,7 +173,7 @@ async function loadLive(){
   const fc = await getJSON(`${FLOOD_URL}?latitude=${lat.join(",")}&longitude=${lon.join(",")}&daily=river_discharge&forecast_days=3&timezone=Europe%2FDublin&_=${Date.now()}`);
   const arr = Array.isArray(fc)?fc:[fc];
   towns.forEach((t,i)=>{t.forecast = arr[i].daily.time.map((d,k)=>({date:d,flow:arr[i].daily.river_discharge[k]}))});
-  return {fetchedAt:t0, towns, hist, warnings:warn};
+  return {fetchedAt:t0, towns, hist, warnings:warn, sheetText};
 }
 
 function townCounties(t){
@@ -285,7 +288,7 @@ function renderPlan(ev, live){
   const T=ev.towns, nB=T.filter(r=>r.level_i===2).length, nS=T.filter(r=>r.level_i===1).length, nN=T.filter(r=>r.level_i===0).length;
   const fl=T.filter(r=>r.flag_area_manager), erect=T.filter(r=>r.crew).length, reh=T.some(r=>r.rehearsal.length);
   const b=$("banner");
-  if(nB){b.className="b-bar";b.innerHTML=`<div class="bigicon">🚧</div><div><div class="verdict">${nB} town${nB>1?"s":""} at BARRIERS · ${nS} on STANDBY</div><div class="action">${erect} town${erect==1?"":"s"} get barriers from a crew before 18:00${fl.length?` · ${fl.length} flagged to Area Manager`:""}</div></div>`}
+  if(nB){b.className="b-bar";b.innerHTML=`<div class="bigicon">🚧</div><div><div class="verdict">${nB} town${nB>1?"s":""} at BARRIERS · ${nS} on STANDBY</div><div class="action">${erect} town${erect==1?" gets":"s get"} barriers from a crew before 18:00${fl.length?` · ${fl.length} flagged to Area Manager`:""}</div></div>`}
   else if(nS){b.className="b-sby";b.innerHTML=`<div class="bigicon">⚠️</div><div><div class="verdict">${nS} town${nS>1?"s":""} on STANDBY</div><div class="action">Confirm staff, check pumps, stage sandbags. No barriers needed tonight.</div></div>`}
   else {b.className="b-ok";b.innerHTML=`<div class="bigicon">✅</div><div><div class="verdict">All ${T.length} towns NORMAL</div><div class="action">No barriers or standby needed on today's forecast.</div></div>`}
   b.innerHTML += `<div class="deadline">${esc(new Date().toLocaleDateString("en-IE",{weekday:"long",day:"numeric",month:"long"}))}<b>Decide by 16:00</b>Barriers up by 18:00</div>`;
@@ -410,9 +413,11 @@ function renderMethod(live){
 function tab(n){ document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.tab===n)); ["duty","area","method","settings"].forEach(s=>$(s).hidden=s!==n); if(n==="duty"&&MAP)setTimeout(()=>MAP.invalidateSize(),50); }
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>tab(b.dataset.tab));
 
+let SHEETSIG=null, LASTQ=null, BUSY=false, LASTFULL=0;
 async function refresh(){
+  LASTFULL=Date.now();
   $("status").className="mute"; $("status").textContent="Reading Sheet, flow forecasts and Met Éireann warnings…";
-  LIVE = await loadLive(); EV = evaluate(LIVE);
+  LIVE = await loadLive(); EV = evaluate(LIVE); SHEETSIG = LIVE.sheetText;
   renderPlan(EV,LIVE); $("working").innerHTML=renderWorking(EV,LIVE); renderArea(LIVE); renderMethod(LIVE);
   $("status").textContent="";
   return {live:LIVE, ev:EV};
@@ -420,9 +425,10 @@ async function refresh(){
 
 function addMsg(role, html, meta){ const d=document.createElement("div"); d.className="msg "+role; d.innerHTML=html+(meta?`<div class="meta">${esc(meta)}</div>`:""); $("msgs").appendChild(d); $("msgs").scrollTop=1e9; return d; }
 
-async function ask(question){
+async function ask(question, auto){
   const key=localStorage.getItem("rw_key");
-  addMsg("user",esc(question)); $("ask").disabled=true;
+  LASTQ=question; BUSY=true;
+  addMsg("user",(auto?"↻ ":"")+esc(question)); $("ask").disabled=true;
   const bot=addMsg("bot",'<span class="dots2"><i></i><i></i><i></i></span> reading live data…');
   try{
     const {live,ev}=await refresh();
@@ -442,9 +448,34 @@ async function ask(question){
     const u=data.usage||{}, cost=((u.input_tokens||0)*PRICE_IN+(u.output_tokens||0)*PRICE_OUT)/1e6, n=(+localStorage.getItem("rw_count")||0)+1; localStorage.setItem("rw_count",n);
     bot.innerHTML=md(text)+`<div class="meta">Data read ${esc(live.fetchedAt.toLocaleTimeString())} · tokens ${u.input_tokens}/${u.output_tokens} · ≈ $${cost.toFixed(5)} this answer · ${n} question(s) from this browser · full working below</div>`;
   }catch(e){ bot.innerHTML=`<span class="err">${esc(e.message)}</span>`; }
-  finally{ $("ask").disabled=false; $("msgs").scrollTop=1e9; }
+  finally{ BUSY=false; $("ask").disabled=false; $("msgs").scrollTop=1e9; }
 }
 
+function markStale(){
+  const t=new Date().toLocaleTimeString();
+  document.querySelectorAll(".msg.bot:not(.stale)").forEach(m=>{ m.classList.add("stale"); m.insertAdjacentHTML("afterbegin",`<div class="stalebadge">⚠ Out of date – Sheet changed ${esc(t)}</div>`); });
+}
+async function onSheetChanged(){
+  BUSY=true;
+  try{
+    await refresh(); history=[]; markStale();
+    addMsg("sys",`Sheet changed at ${new Date().toLocaleTimeString()}: plan, working, map, resource gaps and study ranking refreshed. Earlier answers are marked out of date.`);
+  }catch(e){ $("status").className="err"; $("status").textContent=e.message; BUSY=false; return; }
+  BUSY=false;
+  if(LASTQ && $("autoq").checked){ if(localStorage.getItem("rw_key")) await ask(LASTQ,true); else addMsg("sys","Save your key under Settings to have the last answer re-written automatically."); }
+}
+async function pollSheet(){
+  if(BUSY||SHEETSIG===null) return;
+  try{
+    const t=await fetch(SHEET_URL+"&_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():Promise.reject(new Error("Sheet returned "+r.status)));
+    $("poll").textContent="Sheet last checked "+new Date().toLocaleTimeString()+" · checks every 15 s, forecasts and warnings every 5 min";
+    if(BUSY) return;
+    if(t!==SHEETSIG) await onSheetChanged();
+    else if(Date.now()-LASTFULL>300000){ BUSY=true; try{ await refresh(); }finally{ BUSY=false; } }
+  }catch(e){ $("poll").textContent="Sheet check failed: "+e.message; }
+}
+setInterval(pollSheet,POLL_MS);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) pollSheet(); });
 function keyState(){ $("keystate").textContent = localStorage.getItem("rw_key") ? "✔ A key is saved in this browser only." : "No key saved yet."; }
 $("save").onclick=()=>{ const v=$("key").value.trim(); if(v){localStorage.setItem("rw_key",v);$("key").value="";} keyState(); };
 $("forget").onclick=()=>{ localStorage.removeItem("rw_key"); $("key").value=""; keyState(); };
