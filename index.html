@@ -71,7 +71,7 @@ details{margin-top:6px}summary{cursor:pointer;color:var(--acc);font-size:13px}
   <button data-tab="settings">Settings · key</button>
 </nav>
 <main>
-  <div class="disc"><b>AI can make mistakes; a person makes the final decision.</b> River Watch recommends; the Duty Officer decides by 16:00 and records the reason. Not covered: coastal/tidal flooding, road closures, insurance, anything about an individual home – contact the council's area office.</div>
+  <div class="disc"><b>AI can make mistakes; a person makes the final decision.</b> Written answers come from Anthropic <b>Claude Haiku 5.5</b> (<code id="mname">claude-haiku-5-5</code>); the numbers are computed by code. River Watch recommends; the Duty Officer decides by 16:00 and records the reason. Not covered: coastal/tidal flooding, road closures, insurance, anything about an individual home – contact the council's area office.</div>
 
   <section id="duty">
     <div id="banner" class="b-load"><div class="bigicon">⏳</div><div><div class="verdict">Reading live data…</div></div></div>
@@ -436,6 +436,7 @@ $("ask").onclick=()=>{ const q=$("q").value.trim(); if(q){ $("q").value=""; ask(
 $("q").addEventListener("keydown",e=>{ if(e.key==="Enter") $("ask").click(); });
 $("refresh").onclick=()=>refresh().catch(e=>{$("status").className="err";$("status").textContent=e.message});
 document.querySelectorAll(".qchip").forEach(b=>b.onclick=()=>ask(b.dataset.q));
+$("model").addEventListener("input",()=>{$("mname").textContent=$("model").value.trim()||"claude-haiku-5-5"});
 keyState();
 refresh().catch(e=>{ $("banner").className="b-bar"; $("banner").innerHTML=`<div class="bigicon">⚠️</div><div><div class="verdict">Could not read live data</div><div class="action">${esc(e.message)}</div></div>`; });
 </script>
