@@ -30,7 +30,9 @@
    },
    "events_total": 11,
    "first4": 2,
-   "last4": 6
+   "last4": 6,
+   "town_lat": 52.355,
+   "town_lon": -7.703
   },
   "Fermoy": {
    "river": "Blackwater",
@@ -58,7 +60,9 @@
    },
    "events_total": 10,
    "first4": 1,
-   "last4": 6
+   "last4": 6,
+   "town_lat": 52.1385,
+   "town_lon": -8.2745
   },
   "Mallow": {
    "river": "Blackwater",
@@ -86,7 +90,9 @@
    },
    "events_total": 13,
    "first4": 2,
-   "last4": 8
+   "last4": 8,
+   "town_lat": 52.135,
+   "town_lon": -8.642
   },
   "Bandon": {
    "river": "Bandon",
@@ -114,7 +120,9 @@
    },
    "events_total": 11,
    "first4": 1,
-   "last4": 8
+   "last4": 8,
+   "town_lat": 51.745,
+   "town_lon": -8.74
   },
   "Enniscorthy": {
    "river": "Slaney",
@@ -142,7 +150,9 @@
    },
    "events_total": 7,
    "first4": 2,
-   "last4": 4
+   "last4": 4,
+   "town_lat": 52.501,
+   "town_lon": -6.558
   },
   "Ennis": {
    "river": "Fergus",
@@ -170,7 +180,9 @@
    },
    "events_total": 17,
    "first4": 7,
-   "last4": 9
+   "last4": 9,
+   "town_lat": 52.844,
+   "town_lon": -8.98
   },
   "Athlone": {
    "river": "Shannon",
@@ -198,7 +210,9 @@
    },
    "events_total": 1,
    "first4": 1,
-   "last4": 0
+   "last4": 0,
+   "town_lat": 53.4235,
+   "town_lon": -7.94
   },
   "Carrick-on-Shannon": {
    "river": "Shannon",
@@ -226,7 +240,9 @@
    },
    "events_total": 12,
    "first4": 4,
-   "last4": 3
+   "last4": 3,
+   "town_lat": 53.946,
+   "town_lon": -8.09
   }
  }
 }

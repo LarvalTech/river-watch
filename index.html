@@ -3,78 +3,120 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>River Watch – flood response decision support</title>
+<title>River Watch · Flood response decision support</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
- :root{--bg:#f4f7fa;--ink:#16222e;--mut:#5b6b7a;--card:#fff;--line:#d5dde5;--n:#2e8b57;--s:#d9930d;--b:#c0392b;--acc:#1f5f99}
- *{box-sizing:border-box} body{margin:0;font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
- header{background:var(--acc);color:#fff;padding:14px 18px} header h1{margin:0;font-size:20px} header p{margin:2px 0 0;opacity:.9;font-size:13px}
- main{max-width:1100px;margin:0 auto;padding:14px}
- .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:12px}
- .warn{background:#fff8e1;border-color:#f0d68a}
- h2{font-size:16px;margin:0 0 8px}
- button{font:inherit;border:1px solid var(--acc);background:#fff;color:var(--acc);border-radius:6px;padding:6px 10px;cursor:pointer;margin:2px 4px 2px 0}
- button.primary{background:var(--acc);color:#fff} button:disabled{opacity:.5}
- input[type=text],input[type=password]{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;width:100%}
- .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center} .row>*{flex:0 0 auto}.grow{flex:1 1 260px!important}
- table{border-collapse:collapse;width:100%;font-size:13px} th,td{border:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top} th{background:#eef3f8}
- .tablewrap{overflow-x:auto}
- .lv{display:inline-block;color:#fff;border-radius:4px;padding:1px 7px;font-weight:600}
- .Normal{background:var(--n)}.Standby{background:var(--s)}.Barriers{background:var(--b)}
- .reh{background:#6c3fb5;color:#fff;border-radius:4px;padding:0 5px;font-size:11px;margin-left:4px}
- #answer{white-space:pre-wrap} small,.mut{color:var(--mut)} details{margin-top:6px}
- #status{font-size:12px;color:var(--mut)} .err{color:var(--b);font-weight:600}
+:root{--bg:#0e1a2b;--card:#16263f;--ink:#e8eef7;--mute:#93a4bd;--line:#27395a;--bar:#e5484d;--sby:#f5a524;--nor:#30a46c;--acc:#6ea8fe}
+*{box-sizing:border-box}body{margin:0;font:15px/1.45 system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;flex-wrap:wrap;gap:8px}
+h1{margin:0;font-size:24px}h2{margin:0 0 8px;font-size:16px}h3{margin:12px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.7px;color:var(--mute)}
+.sub{margin:0;color:var(--mute)}.stamp{color:var(--mute);font-size:13px;text-align:right}
+nav{display:flex;gap:4px;padding:0 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav button{background:none;border:0;color:var(--mute);padding:10px 14px;cursor:pointer;font-size:15px;border-bottom:3px solid transparent;margin:0}
+nav button.on{color:var(--ink);border-color:var(--acc)}
+main{padding:16px 20px;max-width:1300px;margin:auto}footer{padding:20px;color:var(--mute);font-size:13px;text-align:center}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+.disc{background:#2e2412;border:1px solid var(--sby);border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:14px}
+.grid{display:grid;grid-template-columns:1.2fr 1fr;gap:14px}@media(max-width:900px){.grid{grid-template-columns:1fr}}
+#banner{border-radius:10px;padding:18px 24px;margin-bottom:14px;display:flex;gap:18px;align-items:center}
+.b-ok{background:var(--nor)}.b-sby{background:var(--sby);color:#222}.b-bar{background:var(--bar)}.b-load{background:#3a4e75}
+.bigicon{font-size:48px;line-height:1}.verdict{font-size:26px;font-weight:800}.action{font-size:16px;margin-top:2px}
+#tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}@media(max-width:800px){.verdict{font-size:20px}}.deadline{margin-left:auto;text-align:right;font-size:13px;white-space:nowrap}.deadline b{font-size:18px;display:block}@media(max-width:700px){#banner{flex-wrap:wrap}.deadline{margin-left:0;text-align:left}}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;border-top:4px solid var(--line)}
+.tile .big{font-size:34px;font-weight:800;line-height:1.1}.tile .lab{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--mute);margin-top:2px}.tile .s{font-size:13px;margin-top:2px}
+.t-bar{border-top-color:var(--bar)}.t-sby{border-top-color:var(--sby)}.t-nor{border-top-color:var(--nor)}.t-fl{border-top-color:#a78bfa}.t-w{border-top-color:#38bdf8}.t-g{border-top-color:#fb923c}.t-h{border-top-color:#f472b6}
+#towns{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-bottom:14px}
+.tc{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;border-top:5px solid var(--line)}
+.tc.Barriers{border-top-color:var(--bar)}.tc.Standby{border-top-color:var(--sby)}.tc.Normal{border-top-color:var(--nor)}
+.tc .hd{display:flex;justify-content:space-between;align-items:center}.tc .nm{font-weight:700;font-size:16px}.tc .rv{font-size:12px;color:var(--mute)}
+.pill{padding:2px 9px;border-radius:99px;font-size:12px;font-weight:700;color:#fff}.pill.Barriers{background:var(--bar)}.pill.Standby{background:var(--sby);color:#222}.pill.Normal{background:var(--nor)}
+.gauge{position:relative;height:14px;background:#0e1a2b;border-radius:7px;margin:12px 0 4px}
+.gauge .f{position:absolute;left:0;top:0;bottom:0;border-radius:7px;background:var(--acc)}.gauge .m{position:absolute;top:-4px;bottom:-4px;width:2px;background:#fff}.gauge .m.p99{background:var(--bar)}.gauge .m.p95{background:var(--sby)}
+.gl{display:flex;justify-content:space-between;font-size:11px;color:var(--mute)}
+.tc .ac{font-size:13px;margin-top:8px}.tc .why{font-size:12px;color:var(--mute);margin-top:4px}
+.chip{background:#6b4fbb;border-radius:4px;padding:1px 6px;font-size:11px;margin-left:4px;color:#fff}
+.chipw{background:#7a5b12;border-radius:4px;padding:1px 6px;font-size:11px;margin-left:4px}
+.crew{display:flex;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}.crew b{min-width:90px}
+.flagbox{background:#3b1219;border:1px solid var(--bar);border-left:6px solid var(--bar);border-radius:8px;padding:8px 12px;margin:8px 0;font-size:14px}
+#map{height:460px;border-radius:8px}.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mute);margin-top:8px}.legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px;border:2px solid #fff}.lg-star{font-size:15px;line-height:1}.pin{background:none;border:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.qchip{background:#22375c;color:var(--ink);border:1px solid #3a4e75;border-radius:99px;padding:6px 12px;font-size:13px;cursor:pointer}.qchip:hover{background:#2c4673}
+.msgs{max-height:480px;overflow:auto;margin:8px 0}.msg{padding:9px 12px;border-radius:10px;margin:6px 0;max-width:92%;font-size:14px}
+.msg.user{background:#2c4673;margin-left:auto}.msg.bot{background:#101d33;border:1px solid var(--line)}
+.msg .meta{font-size:11px;color:var(--mute);margin-top:6px}
+.chatform{display:flex;gap:6px;align-items:center}
+input,select{background:#0e1a2b;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px;font:inherit}.chatform input{flex:1;margin:0}
+button.act{padding:8px 14px;border-radius:6px;border:0;cursor:pointer;font-size:14px;background:#3a4e75;color:#fff}button.act.p{background:var(--acc);color:#0e1a2b;font-weight:700}button:disabled{opacity:.5}
+.dots2 i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--mute);margin-right:4px;animation:bl 1s infinite}.dots2 i:nth-child(2){animation-delay:.2s}.dots2 i:nth-child(3){animation-delay:.4s}@keyframes bl{50%{opacity:.2}}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:5px 8px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--mute);font-weight:600}
+.tw{overflow-x:auto}.mute{color:var(--mute)}.err{color:#ff8b8b;font-weight:600}
+.hb{display:inline-block;min-width:30px;text-align:center;border-radius:3px;margin-right:2px;font-size:12px;color:#111}
+.bars .r{display:flex;align-items:center;gap:8px;margin:5px 0}.bars .l{width:140px;font-size:13px}.bars .t{flex:1;background:#0e1a2b;border-radius:5px;height:22px;position:relative}.bars .t i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:var(--acc)}.bars .t.top i{background:var(--bar)}.bars .v{width:28px;text-align:right;font-weight:700}
+.big2{font-size:22px;font-weight:700}
+a{color:var(--acc)}
+.seg{display:flex}.seg button{background:#22375c;color:var(--ink);border:1px solid #3a4e75;padding:6px 12px;cursor:pointer;font-size:13px}.seg button:first-child{border-radius:6px 0 0 6px}.seg button:last-child{border-radius:0 6px 6px 0;border-left:0}.seg button.on{background:var(--acc);color:#0e1a2b;font-weight:700}
+.gap{display:flex;gap:10px;align-items:flex-start;border-radius:8px;padding:8px 12px;margin:6px 0;font-size:14px;border:1px solid var(--line);border-left:6px solid var(--sby);background:#2e2412}.gap.high{border-left-color:var(--bar);background:#3b1219}.gap ul{margin:2px 0 0;padding-left:18px}
+td.low{background:#4a3410;color:#ffd48a;font-weight:700}td.zero{background:#5a1a22;color:#ffb3b3;font-weight:700}
+details{margin-top:6px}summary{cursor:pointer;color:var(--acc);font-size:13px}
 </style>
 </head>
 <body>
 <header>
- <h1>River Watch</h1>
- <p>Flood response decision support for eight Irish towns · Flood Plan v2026/27 (fictional) · live data</p>
+  <div><h1>🌊 River Watch</h1><p class="sub">Flood response decision support · eight-town shared team · Flood Plan v2026/27 (fictional)</p></div>
+  <div id="stamp" class="stamp">Reading live data…</div>
 </header>
+<nav>
+  <button data-tab="duty" class="on">Duty Officer · tonight</button>
+  <button data-tab="area">Area Manager · study priority</button>
+  <button data-tab="method">Sources &amp; method</button>
+  <button data-tab="settings">Settings · key</button>
+</nav>
 <main>
- <div class="card warn"><strong>AI can make mistakes; a person makes the final decision.</strong> River Watch recommends; the Duty Officer decides by 16:00 and records the reason. Not covered: coastal/tidal flooding, road closures, insurance, anything about an individual home – contact the council's area office.</div>
+  <div class="disc"><b>AI can make mistakes; a person makes the final decision.</b> River Watch recommends; the Duty Officer decides by 16:00 and records the reason. Not covered: coastal/tidal flooding, road closures, insurance, anything about an individual home – contact the council's area office.</div>
 
- <div class="card">
-  <h2>Settings (your own Anthropic key – stored only in this browser)</h2>
-  <div class="row">
-   <input class="grow" type="password" id="key" placeholder="Paste Anthropic API key (sk-ant-…)" autocomplete="off">
-   <input style="width:180px" type="text" id="model" value="claude-haiku-5-5" title="Anthropic model ID">
-   <button id="save">Save key</button><button id="forget">Forget key</button>
-  </div>
-  <div id="keystate" class="mut" style="margin-top:4px"></div>
- </div>
+  <section id="duty">
+    <div id="banner" class="b-load"><div class="bigicon">⏳</div><div><div class="verdict">Reading live data…</div></div></div>
+    <div id="tiles"></div>
+    <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><h2 style="margin:0">Map</h2><div class="seg"><button class="on" data-mode="level">Tonight's level</button><button data-mode="res">Resource gaps</button></div></div><div id="map" style="margin-top:8px"></div>
+      <div class="legend"><span><i style="background:#e5484d"></i>Barriers</span><span><i style="background:#f5a524"></i>Standby</span><span><i style="background:#30a46c"></i>Normal</span><span><i style="background:#38bdf8;border-color:#0e1a2b"></i>point on the river where flow is read</span><span><span class="lg-star">★</span> crew base</span><span id="lgres" class="mute"></span></div></div>
+    <div id="towns"></div>
+    <div class="card"><h2>Resources &amp; gaps</h2><p class="mute" style="margin:0 0 8px;font-size:13px">Compares each town's Sheet resources with the team, flags anything lacking, and checks whether a crew can actually reach it tonight. Thresholds are our own assumption (the Flood Plan sets none): see Sources &amp; method.</p><div id="gaps"></div><div class="tw"><table id="restab"></table></div></div>
+    <div class="card"><h2>Where the crews are needed tonight</h2><div id="crews"></div><div id="flags"></div></div>
+    <div class="card" id="chatcard">
+      <h2>Ask River Watch</h2>
+      <div class="chips">
+        <button class="qchip" data-q="What is tonight's plan?">Tonight's plan</button>
+        <button class="qchip" data-q="Why is Fermoy at that level?">Why is Fermoy at that level?</button>
+        <button class="qchip" data-q="What if the Suir at Clonmel reaches 150 m³/s?">What if the Suir at Clonmel reaches 150 m³/s?</button>
+        <button class="qchip" data-q="Which town should be first in line for a flood-defence study?">Which town first for a study?</button>
+        <button class="qchip" data-q="Will my house in Mallow flood tonight?">Will my house in Mallow flood tonight?</button>
+      </div>
+      <div class="msgs" id="msgs"></div>
+      <div class="chatform"><input id="q" type="text" placeholder="Ask about tonight's plan, a town, or the study priority…"><button class="act p" id="ask">Ask</button><button class="act" id="refresh" title="Re-read Sheet, forecasts and warnings, without the AI">↻ Refresh plan</button></div>
+      <div id="status" class="mute" style="margin-top:6px;font-size:13px"></div>
+    </div>
+    <div class="card"><h2>Working (computed by code from live data)</h2><div id="working" class="mute">Waiting for data…</div></div>
+  </section>
 
- <div class="card">
-  <h2>Ask River Watch</h2>
-  <div class="row" style="margin-bottom:6px">
-   <button class="primary" data-q="What is tonight's plan?">Tonight's plan</button>
-   <button data-q="Why is Fermoy at that level?">Why is Fermoy at that level?</button>
-   <button data-q="What if the Suir at Clonmel reaches 150 m³/s?">What if the Suir at Clonmel reaches 150 m³/s?</button>
-   <button data-q="Which town should be first in line for a flood-defence study?">Area Manager: study priority</button>
-   <button data-q="Will my house in Mallow flood tonight?">Will my house in Mallow flood tonight?</button>
-  </div>
-  <div class="row">
-   <input class="grow" type="text" id="q" placeholder="Ask a question about tonight's plan, a town, or the study priority…">
-   <button class="primary" id="ask">Ask</button>
-   <button id="noai" title="Recompute from live data without calling the AI">Plan only (no AI)</button>
-  </div>
-  <div id="status" style="margin-top:6px"></div>
- </div>
+  <section id="area" hidden></section>
+  <section id="method" hidden></section>
 
- <div class="card" id="ans" hidden><h2>Answer</h2><div id="answer"></div><div id="cost" class="mut" style="margin-top:6px"></div></div>
- <div class="card" id="workcard" hidden><h2>Working (computed by code from live data)</h2><div id="working"></div></div>
-
- <div class="card">
-  <h2>Sources</h2>
-  <ul style="margin:0;padding-left:18px">
-   <li>Team Sheet: Google Sheet (read at each question, columns town…notes).</li>
-   <li>River flow forecast and history: <a href="https://open-meteo.com/en/docs/flood-api">Open-Meteo Flood API</a> (GloFAS), CC BY 4.0, Open-Meteo.com / Copernicus Emergency Management Service.</li>
-   <li>Weather warnings: <a href="https://www.met.ie/Open_Data/json/warning_IRELAND.json">Met Éireann</a> open data (CC BY 4.0), warnings must be read unaltered.</li>
-   <li>Thresholds and event counts: computed once from 2016-01-01 to 2025-12-31 daily flow and stored in <a href="data/history_summary.json">data/history_summary.json</a>.</li>
-  </ul>
- </div>
+  <section id="settings" hidden>
+    <div class="card">
+      <h2>Settings · your own Anthropic key</h2>
+      <p class="mute">Paste your own Anthropic API key. It stays in this browser only (localStorage) and is sent only to api.anthropic.com. It is not in the page source or the repository. Use “Forget key” when you are done.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input style="flex:1 1 300px" type="password" id="key" placeholder="Anthropic API key (sk-ant-…)" autocomplete="off">
+        <input style="width:190px" type="text" id="model" value="claude-haiku-5-5" title="Anthropic model ID">
+        <button class="act p" id="save">Save key</button><button class="act" id="forget">Forget key</button>
+      </div>
+      <div id="keystate" class="mute" style="margin-top:8px"></div>
+    </div>
+  </section>
 </main>
-
+<footer>Advisory tool built for a college project (NCI BDAIB CA2). Not an operational system. AI can make mistakes; a person makes the final decision.</footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+
 const SHEET_ID = "13ep35JeEwSSFWBnRSK7LmaphNfkWQfr6a5AYY0Sucm0";
 const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
 const WARN_URL = "https://www.met.ie/Open_Data/json/warning_IRELAND.json";
@@ -209,25 +251,10 @@ function areaManager(hist){
     limit:"This count cannot tell the Area Manager about damage, how long each event lasted, or the defences already in place. Flow data is modelled (GloFAS grid cell), not gauge-measured."};
 }
 
-function renderWorking(ev, live){
-  let h = `<small>Data fetched ${esc(live.fetchedAt.toLocaleString())} (your browser time). Forecast: Open-Meteo Flood API for dates ${esc(live.towns[0].forecast.map(f=>f.date).join(", "))} (Europe/Dublin). Sheet read live. Warnings: Met Éireann feed, ${live.warnings.length} active warning(s) nationwide. Thresholds: stored 2016–2025 summary.</small>`;
-  h += `<div class="tablewrap"><table><tr><th>Town</th><th>River</th><th>Forecast peak (m³/s, date)</th><th>Peak used</th><th>95th</th><th>99th</th><th>% over 99th</th><th>Warnings (counties)</th><th>Level</th><th>Action / reason</th></tr>`;
-  for(const r of ev.towns){
-    h += `<tr><td><b>${esc(r.town)}</b><br><small>${esc(r.notes)}</small></td><td>${esc(r.river)}</td><td>${fmt(r.forecast_peak)} (${esc(r.peak_date||"")})<br><small>${esc(r.forecast.map(f=>f.date.slice(5)+": "+fmt(f.flow)).join(" · "))}</small></td>
-    <td>${fmt(r.peak_used)}${r.rehearsal.length?'<span class="reh">REHEARSAL</span>':""}</td><td>${fmt(r.p95)}</td><td>${fmt(r.p99)}</td><td>${r.pct_over_p99}%</td>
-    <td>${esc(r.counties.join(" + "))}: ${r.warnings.length? esc(r.warnings.map(w=>w.level).join(", ")):"none"}</td>
-    <td><span class="lv ${r.level}">${r.level}</span></td><td>${esc(r.action)}<br><small>${esc(r.reasons.join("; "))}${r.rehearsal.length?"; rehearsal: "+esc(r.rehearsal.join(", ")):""}</small></td></tr>`;
-  }
-  h += `</table></div><p><b>Crews</b> (max 2 barrier towns each, own area only): ` + ev.crews.map(c=>`${esc(c.crew)} → ${c.assigned.length?esc(c.assigned.join(", ")):"no towns tonight"}${c.note?` <small>(${esc(c.note)})</small>`:""}`).join(" · ") + `</p>`;
-  const fl = ev.towns.filter(r=>r.flag_area_manager).map(r=>r.town);
-  h += `<p><b>Flagged to Area Manager:</b> ${fl.length?esc(fl.join(", ")):"none"}</p>`;
-  return h;
-}
-
 const SYSTEM = `You are River Watch, a decision-support assistant for a flood response team serving eight Irish towns. A person (the Duty Officer, Aoife Brennan) makes every decision; you only recommend and explain.
-RULES: Use ONLY the JSON facts supplied in the user message – code has already computed levels, crews and history counts per the Flood Plan; never recompute differently and never invent numbers, towns, warnings or sources. Quote the numbers, say where each came from (Sheet, Open-Meteo Flood API forecast, Met Éireann warnings, stored 2016–2025 history) and for which date. Always say clearly when a rehearsal value (flow_override_m3s, warning_override or a what-if scenario) is used. Flood Plan levels: Normal below 95th percentile; Standby at/above 95th; Barriers at/above 99th; an orange/red rain warning covering the town's county (both counties for spanning towns) within 48h raises one level; yellow only mentioned. Crews: Clonmel (Clonmel, Fermoy, Enniscorthy), Mallow (Mallow, Fermoy, Bandon), Athlone (Athlone, Carrick-on-Shannon, Ennis), max two barrier towns each, ranked by % over 99th; towns without a barrier set or crew place get Standby measures and are flagged to the Area Manager. Notes in the Sheet are true and applied.
+RULES: Use ONLY the JSON facts supplied in the user message – code has already computed levels, crews and history counts per the Flood Plan; never recompute differently and never invent numbers, towns, warnings or sources. Quote the numbers, say where each came from (Sheet, Open-Meteo Flood API forecast, Met Éireann warnings, stored 2016–2025 history) and for which date. Always say clearly when a rehearsal value (flow_override_m3s, warning_override or a what-if scenario) is used. Flood Plan levels: Normal below 95th percentile; Standby at/above 95th; Barriers at/above 99th; an orange/red rain warning covering the town's county (both counties for spanning towns) within 48h raises one level; yellow only mentioned. Crews: Clonmel (Clonmel, Fermoy, Enniscorthy), Mallow (Mallow, Fermoy, Bandon), Athlone (Athlone, Carrick-on-Shannon, Ennis), max two barrier towns each, ranked by % over 99th; towns without a barrier set or crew place get Standby measures and are flagged to the Area Manager. Notes in the Sheet are true and applied. A resource_check section lists resource gaps found by our own (non-Flood-Plan) rules: report them honestly as flags for the Duty Officer, never as Flood Plan rules.
 SCOPE: Not covered – coastal/tidal flooding, road closures, insurance, individual homes (e.g. "Will my house flood?"): say you cannot answer that and refer to the council's area office; you may add what the river-level plan says for the town without predicting a home. If the data cannot answer something, say so. Flow data is modelled (GloFAS grid cell, not a gauge), so state limits honestly.
-STYLE: short, plain English for a non-technical reader, lead with the answer, then the working. For tonight's plan, list every town with level and reason, then where each crew goes, then flags. End with: "A person makes the final decision."`;
+STYLE: plain text only (no tables, no markdown headings; short paragraphs and "- " bullets are fine), short plain English for a non-technical reader, lead with the answer, then the working. For tonight's plan, list every town with level and reason, then where each crew goes, then flags. End with: "A person makes the final decision."`;
 
 function parseScenario(q, live){
   const m = q.match(/(\d+(?:\.\d+)?)\s*(?:m³\/s|m3\/s|m³|m3|cumecs)/i); if(!m) return null;
@@ -238,48 +265,179 @@ function parseScenario(q, live){
   return Object.fromEntries(chosen.map(t=>[t,v]));
 }
 
-let history = [];
-async function ask(question, useAI=true){
-  const key = localStorage.getItem("rw_key"); 
-  $("ask").disabled = true; $("status").className=""; $("status").textContent="Reading Sheet, flow forecasts and Met Éireann warnings…";
-  try{
-    const live = await loadLive();
-    const ev = evaluate(live);
-    const scn = parseScenario(question, live);
-    const scnEv = scn ? evaluate(live, scn) : null;
-    $("workcard").hidden=false; $("working").innerHTML = renderWorking(scnEv||ev, live) + (scnEv?`<p><span class="reh">WHAT-IF</span> The table above is the scenario (${esc(JSON.stringify(scn))} m³/s). Real plan is computed separately and was sent to the assistant too.</p>`:"");
-    if(!useAI){ $("ans").hidden=true; $("status").textContent="Computed without AI at "+live.fetchedAt.toLocaleTimeString(); return; }
-    if(!key){ throw new Error("Paste and save your Anthropic key in Settings to ask the AI. (Use 'Plan only (no AI)' to see the computed plan.)"); }
-    const brief = t=>({town:t.town,county_names_used:t.counties,river:t.river,forecast_daily:t.forecast,forecast_peak:t.forecast_peak,peak_date:t.peak_date,peak_used:t.peak_used,peak_source:t.peak_source,p95:t.p95,p99:t.p99,pct_over_p99:t.pct_over_p99,warnings_in_next_48h:t.warnings,warning_top:t.warning_top,base_level:t.base_level,final_level:t.level,reasons:t.reasons,barrier:t.barrier_note,crew:t.crew,action:t.action,flag_area_manager:t.flag_area_manager,rehearsal_values_used:t.rehearsal,sheet:{notes:t.notes}});
-    const facts = {generated_at:ev.at, timezone:"UTC timestamp; forecast days are Europe/Dublin dates", sources:{sheet:"Team Google Sheet (live)",forecast:"Open-Meteo Flood API (GloFAS), CC BY 4.0",warnings:"Met Éireann open data warning_IRELAND.json (CC BY 4.0)",history:"Open-Meteo Flood API GloFAS reanalysis 2016-01-01..2025-12-31, summarised once"},
-      real_plan:{towns:ev.towns.map(brief),crews:ev.crews}, scenario:scnEv?{overrides_m3s:scn,plan:{towns:scnEv.towns.map(brief),crews:scnEv.crews}}:null,
-      area_manager:areaManager(live.hist), history_summary:Object.fromEntries(Object.entries(live.hist.towns).map(([k,h])=>[k,{river:h.river,lat:h.lat,lon:h.lon,mean:h.mean,p95:h.p95,p99:h.p99,events_by_winter:h.events_by_winter}]))};
-    const userMsg = `QUESTION: ${question}\n\nFACTS (JSON, computed live by code):\n${JSON.stringify(facts)}`;
-    $("status").textContent="Asking the AI…";
-    const msgs = [...history.slice(-4), {role:"user",content:userMsg}];
-    const res = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-      body:JSON.stringify({model:$("model").value.trim()||"claude-haiku-5-5",max_tokens:1800,system:SYSTEM,messages:msgs})});
-    const data = await res.json();
-    if(!res.ok) throw new Error("AI provider: "+(data.error?.message||res.status));
-    const text = data.content.filter(b=>b.type==="text").map(b=>b.text).join("\n");
-    history.push({role:"user",content:`QUESTION: ${question}`},{role:"assistant",content:text});
-    $("ans").hidden=false; $("answer").textContent = text;
-    const u=data.usage||{}, cost=((u.input_tokens||0)*PRICE_IN+(u.output_tokens||0)*PRICE_OUT)/1e6;
-    const n=(+localStorage.getItem("rw_count")||0)+1; localStorage.setItem("rw_count",n);
-    $("cost").textContent=`Tokens in/out: ${u.input_tokens}/${u.output_tokens} · est. cost this answer ≈ $${cost.toFixed(5)} (Haiku 5.5 list price) · questions asked from this browser: ${n} · plan generated ${new Date(ev.at).toLocaleString()}`;
-    $("status").textContent="Done.";
-  }catch(e){ $("status").className="err"; $("status").textContent=e.message; }
-  finally{ $("ask").disabled=false; }
+let history = [], LIVE=null, EV=null, MAP=null, LAYER=null, MAPMODE="level", RES=null;
+const COL = {Barriers:"#e5484d",Standby:"#f5a524",Normal:"#30a46c"};
+const md = s => esc(s).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/^- (.*)$/gm,"• $1").replace(/\n/g,"<br>");
+
+function renderPlan(ev, live){
+  const T=ev.towns, nB=T.filter(r=>r.level_i===2).length, nS=T.filter(r=>r.level_i===1).length, nN=T.filter(r=>r.level_i===0).length;
+  const fl=T.filter(r=>r.flag_area_manager), erect=T.filter(r=>r.crew).length, reh=T.some(r=>r.rehearsal.length);
+  const b=$("banner");
+  if(nB){b.className="b-bar";b.innerHTML=`<div class="bigicon">🚧</div><div><div class="verdict">${nB} town${nB>1?"s":""} at BARRIERS · ${nS} on STANDBY</div><div class="action">${erect} town${erect==1?"":"s"} get barriers from a crew before 18:00${fl.length?` · ${fl.length} flagged to Area Manager`:""}</div></div>`}
+  else if(nS){b.className="b-sby";b.innerHTML=`<div class="bigicon">⚠️</div><div><div class="verdict">${nS} town${nS>1?"s":""} on STANDBY</div><div class="action">Confirm staff, check pumps, stage sandbags. No barriers needed tonight.</div></div>`}
+  else {b.className="b-ok";b.innerHTML=`<div class="bigicon">✅</div><div><div class="verdict">All ${T.length} towns NORMAL</div><div class="action">No barriers or standby needed on today's forecast.</div></div>`}
+  b.innerHTML += `<div class="deadline">${esc(new Date().toLocaleDateString("en-IE",{weekday:"long",day:"numeric",month:"long"}))}<b>Decide by 16:00</b>Barriers up by 18:00</div>`;
+  if(reh) b.querySelector(".action").innerHTML += ' <span class="chip">REHEARSAL VALUES IN USE</span>';
+  const wl=T.filter(r=>r.warning_top!=="none"), wTop=["red","orange","yellow"].find(l=>T.some(r=>r.warning_top===l)), hot=[...T].sort((a,b)=>b.peak_used/b.p95-a.peak_used/a.p95)[0];
+  const _r=resourceCheck(live,ev), _hi=_r.towns.filter(t=>t.severity==="high"), _me=_r.towns.filter(t=>t.severity==="medium");
+  const nat=live.warnings.filter(w=>/rain/i.test(w.type)).length;
+  $("tiles").innerHTML = [
+    ["t-bar",nB,"Barriers",`${erect} with a crew`],["t-sby",nS,"Standby","staff · pumps · sandbags"],["t-nor",nN,"Normal","below 95th percentile"],
+    ["t-fl",fl.length,"Flagged to Area Manager",fl.map(r=>r.town).join(", ")||"none"],
+    ["t-w",wl.length?wTop.toUpperCase():"None","Rain warnings (48h)",wl.length?wl.map(r=>r.town).join(", "):`${nat} rain warning(s) nationwide, none for our towns`],
+    ["t-g","__G__","Resource gaps","__GS__"],
+    ["t-h",Math.round(hot.peak_used/hot.p95*100)+"%","Closest to its 95th",`${hot.town} (${fmt(hot.peak_used)} of ${fmt(hot.p95)} m³/s)`]
+  ].map(([c,n,l,s])=>[c,n==="__G__"?_hi.length+_me.length:n,l,s==="__GS__"?(_hi.length?_hi.length+" critical: "+_hi.map(t=>t.town).join(", "):"none critical")+(_me.length?` · ${_me.length} to watch`:""):s]).map(([c,n,l,s])=>`<div class="tile ${c}"><div class="big">${n}</div><div class="lab">${l}</div><div class="s">${esc(s)}</div></div>`).join("");
+  $("towns").innerHTML = T.map(r=>{
+    const max=Math.max(r.peak_used||0,r.p99*1.15), pc=v=>Math.min(100,v/max*100);
+    return `<div class="tc ${r.level}"><div class="hd"><div><div class="nm">${esc(r.town)}${r.rehearsal.length?'<span class="chip">REHEARSAL</span>':""}</div><div class="rv">River ${esc(r.river)} · ${esc(r.counties.join(" + "))}</div></div><span class="pill ${r.level}">${r.level}</span></div>
+     <div class="gauge"><div class="f" style="width:${pc(r.peak_used)}%"></div><div class="m p95" style="left:${pc(r.p95)}%"></div><div class="m p99" style="left:${pc(r.p99)}%"></div></div>
+     <div class="gl"><span>peak <b style="color:#e8eef7">${fmt(r.peak_used)}</b> m³/s</span><span style="color:var(--sby)">95th ${fmt(r.p95)}</span><span style="color:var(--bar)">99th ${fmt(r.p99)}</span></div>
+     <div class="ac">${esc(r.action)}</div>
+     <div class="why">${esc(r.reasons.join("; "))}${r.warning_top!=="none"?` <span class="chipw">${esc(r.warning_top)} warning</span>`:""}</div></div>`}).join("");
+  $("crews").innerHTML = ev.crews.map(c=>`<div class="crew"><b>${esc(c.crew)} crew</b><span>${c.assigned.length?"→ "+esc(c.assigned.join(", ")):'<span class="mute">no towns tonight</span>'}</span>${c.note?`<span class="mute" style="font-size:12px">(${esc(c.note)})</span>`:""}</div>`).join("");
+  $("flags").innerHTML = fl.length? fl.map(r=>`<div class="flagbox">🚩 <b>${esc(r.town)}</b>: ${esc(r.action)}</div>`).join("") : '<p class="mute" style="margin:8px 0 0">No towns flagged to the Area Manager.</p>';
+  $("stamp").innerHTML = `Live read ${esc(live.fetchedAt.toLocaleString())}<br>Forecast dates ${esc(live.towns[0].forecast.map(f=>f.date.slice(5)).join(", "))} · ${live.warnings.length} active warning(s)`;
+  RES=resourceCheck(live,ev); renderGaps(RES); drawMap(ev);
 }
 
-function keyState(){ $("keystate").textContent = localStorage.getItem("rw_key") ? "A key is saved in this browser only (never sent anywhere except api.anthropic.com)." : "No key saved."; }
+
+const median=a=>{const s=[...a].sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2};
+function resourceCheck(live, ev){
+  const rows=live.towns, num=v=>parseInt(v,10)||0;
+  const med={pumps:median(rows.map(t=>num(t.pumps))),sandbags:median(rows.map(t=>num(t.sandbags))),staff:median(rows.map(t=>num(t.staff_on_call))),events:median(Object.values(live.hist.towns).map(h=>h.events_total))};
+  const LOW=0.7, out={med,low:LOW,towns:[]};
+  for(const t of rows){
+    const r=ev.towns.find(x=>x.town===t.town), h=live.hist.towns[t.town], f=[], cells={};
+    const v={sets:num(t.barrier_sets),pumps:num(t.pumps),sandbags:num(t.sandbags),staff:num(t.staff_on_call)};
+    if(!r.can_barrier){ f.push({sev:"high",text:`Cannot erect barriers: ${r.barrier_note}`}); cells.sets="zero"; }
+    const crews=ev.crews.filter(c=>c.area.includes(t.town));
+    if(!crews.length) f.push({sev:"high",text:`No crew can work here tonight (${ev.crews.filter(c=>c.note).map(c=>c.crew+" crew: "+c.note).join("; ")||"no crew area covers it"})`});
+    if(/(repair|loan|unavailable|damaged|out of service|broken)/i.test(t.notes)) f.push({sev:"medium",text:`Logged in notes: ${t.notes}`});
+    [["pumps",v.pumps,med.pumps],["sandbags",v.sandbags,med.sandbags],["staff on call",v.staff,med.staff]].forEach(([n,x,m])=>{ if(x<=m*LOW){ f.push({sev:"medium",text:`Low ${n}: ${x} vs team median ${m}`}); cells[n==="staff on call"?"staff":n]="low"; } });
+    const below=[["pumps",v.pumps,med.pumps],["sandbags",v.sandbags,med.sandbags],["staff on call",v.staff,med.staff]].filter(([n,x,m])=>x<m).map(([n])=>n);
+    if(h.events_total>=med.events && below.length) f.push({sev:"medium",text:`High flood history (${h.events_total} high-flow events 2016–2025, team median ${med.events}) but below-median ${below.join(", ")}`});
+    const sev=f.some(x=>x.sev==="high")?"high":f.length?"medium":"ok";
+    out.towns.push({town:t.town,values:v,cells,flags:f,severity:sev,crews_able:crews.map(c=>c.crew),level:r.level});
+  }
+  return out;
+}
+function renderGaps(res){
+  const g=res.towns.filter(t=>t.flags.length).sort((a,b)=>(b.severity==="high")-(a.severity==="high"));
+  $("gaps").innerHTML = g.length? g.map(t=>`<div class="gap ${t.severity}"><div style="font-size:20px">${t.severity==="high"?"🔴":"🟠"}</div><div><b>${esc(t.town)}</b>${t.level!=="Normal"?` <span class="pill ${t.level}">${t.level} tonight</span>`:""}<ul>${t.flags.map(x=>`<li>${esc(x.text)}</li>`).join("")}</ul></div></div>`).join("") : '<p class="mute">No resource gaps found.</p>';
+  $("restab").innerHTML = `<tr><th>Town</th><th>Barrier sets</th><th>Pumps</th><th>Sandbags</th><th>Staff on call</th><th>Crews able to reach</th></tr>`+res.towns.map(t=>`<tr><td><b>${esc(t.town)}</b></td><td class="${t.cells.sets||""}">${t.values.sets}</td><td class="${t.cells.pumps||""}">${t.values.pumps}</td><td class="${t.cells.sandbags||""}">${t.values.sandbags}</td><td class="${t.cells.staff||""}">${t.values.staff}</td><td class="${t.crews_able.length?"":"zero"}">${t.crews_able.length?esc(t.crews_able.join(", ")):"none tonight"}</td></tr>`).join("")+`<tr><td class="mute">Team median</td><td></td><td>${res.med.pumps}</td><td>${res.med.sandbags}</td><td>${res.med.staff}</td><td></td></tr>`;
+}
+
+const DIR={Mallow:"left",Bandon:"left",Ennis:"left","Carrick-on-Shannon":"left",Athlone:"top",Fermoy:"bottom",Clonmel:"top",Enniscorthy:"right"};
+const SEVCOL={high:"#e5484d",medium:"#f5a524",ok:"#30a46c"};
+function drawMap(ev){
+  if(typeof L==="undefined") return;
+  if(!MAP){ MAP=L.map("map").setView([52.85,-8.0],7); L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap contributors",maxZoom:13}).addTo(MAP); LAYER=L.layerGroup().addTo(MAP); }
+  LAYER.clearLayers(); const pts=[], res=MAPMODE==="res";
+  $("lgres").textContent = res? "· Resource view: red = cannot act / no crew, amber = lacking, green = fine" : "";
+  ev.towns.forEach(r=>{
+    const h=LIVE.hist.towns[r.town], tp=[h.town_lat,h.town_lon], rp=[h.lat,h.lon], rt=RES.towns.find(x=>x.town===r.town); pts.push(tp,rp);
+    L.polyline([tp,rp],{color:"#38bdf8",weight:2,dashArray:"3 4"}).addTo(LAYER);
+    L.circleMarker(rp,{radius:5,color:"#0e1a2b",weight:2,fillColor:"#38bdf8",fillOpacity:1}).bindTooltip(`${esc(r.river)} flow point for ${esc(r.town)} (${h.lat}, ${h.lon})`).addTo(LAYER);
+    const v=rt.values, resLine=`Sets ${v.sets} · Pumps ${v.pumps} · Sandbags ${v.sandbags} · Staff ${v.staff}`;
+    const pop=`<b>${esc(r.town)}</b> (${esc(r.counties.join(" + "))}) · <b>${r.level}</b><br>River ${esc(r.river)}<br>Peak used ${fmt(r.peak_used)} m³/s · 95th ${fmt(r.p95)} · 99th ${fmt(r.p99)}<br>${esc(resLine)}${r.crew_base?"<br>★ Crew base":""}<br>${rt.flags.length?"<b>Resource gaps</b>:<br>"+rt.flags.map(x=>"• "+esc(x.text)).join("<br>"):"No resource gaps"}`;
+    const fill=res?SEVCOL[rt.severity]:COL[r.level];
+    const label=res?`<b>${esc(r.town)}</b> · ${rt.flags.length?rt.flags.length+" gap"+(rt.flags.length>1?"s":""):"OK"}`:`<b>${esc(r.town)}</b> · ${r.level}`;
+    const d=DIR[r.town]||"right", off=d==="left"?[-14,0]:d==="right"?[14,0]:d==="top"?[0,-14]:[0,14];
+    L.circleMarker(tp,{radius:13,color:"#fff",weight:2,fillColor:fill,fillOpacity:.95}).bindPopup(pop).bindTooltip(label,{permanent:true,direction:d,offset:off}).addTo(LAYER);
+    if(r.crew_base) L.marker(tp,{icon:L.divIcon({className:"pin",html:'<div style="color:#fff;font-size:15px;line-height:26px;width:26px;height:26px;text-align:center;text-shadow:0 0 3px #000">★</div>',iconSize:[26,26],iconAnchor:[13,13]}),interactive:false}).addTo(LAYER);
+  });
+  MAP.invalidateSize(); MAP.fitBounds(pts,{padding:[50,50],maxZoom:8});
+  setTimeout(()=>{MAP.invalidateSize();MAP.fitBounds(pts,{padding:[50,50],maxZoom:8})},250);
+}
+document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{MAPMODE=b.dataset.mode;document.querySelectorAll(".seg button").forEach(x=>x.classList.toggle("on",x===b));if(EV)drawMap(EV)});
+
+function renderWorking(ev, live){
+  let h = `<small class="mute">Read ${esc(live.fetchedAt.toLocaleString())}. Sheet: live Google Sheet. Forecast: Open-Meteo Flood API, dates ${esc(live.towns[0].forecast.map(f=>f.date).join(", "))} (Europe/Dublin). Warnings: Met Éireann feed (${live.warnings.length} active). Thresholds: stored 2016–2025 summary.</small><div class="tw"><table><tr><th>Town</th><th>Forecast per day (m³/s)</th><th>Peak used</th><th>95th</th><th>99th</th><th>% over 99th</th><th>Warnings</th><th>Barrier set</th><th>Level</th></tr>`;
+  for(const r of ev.towns){
+    h += `<tr><td><b>${esc(r.town)}</b><br><small class="mute">${esc(r.notes)}</small></td><td>${esc(r.forecast.map(f=>f.date.slice(5)+": "+fmt(f.flow)).join(" · "))}<br><small class="mute">peak ${fmt(r.forecast_peak)} on ${esc(r.peak_date||"")}</small></td>
+    <td>${fmt(r.peak_used)}${r.rehearsal.length?'<span class="chip">REHEARSAL</span><br><small class="mute">'+esc(r.rehearsal.join(", "))+"</small>":""}</td><td>${fmt(r.p95)}</td><td>${fmt(r.p99)}</td><td>${r.pct_over_p99}%</td>
+    <td>${esc(r.counties.join(" + "))}: ${r.warnings.length?esc(r.warnings.map(w=>w.level).join(", ")):"none"}</td><td>${esc(r.barrier_note)}</td><td><span class="pill ${r.level}">${r.level}</span></td></tr>`;
+  }
+  return h+"</table></div>";
+}
+
+function renderArea(live){
+  const a=areaManager(live.hist), max=Math.max(...a.ranking.map(r=>r.total));
+  const wint=Object.keys(live.hist.towns[a.top_town].events_by_winter);
+  const heat=v=>{const c=v==0?"#2a3a55":v<=1?"#f5d27a":v<=2?"#f5a524":"#e5484d";return `<span class="hb" style="background:${c}">${v}</span>`};
+  $("area").innerHTML = `<div class="card"><h2>Which town should be first in line for a flood-defence study?</h2>
+   <div class="big2">${esc(a.first_in_line.join(" & "))} — ${a.top_total} high-flow events</div>
+   <p>${esc(a.trend)}</p>
+   <div class="bars">${a.ranking.map(r=>`<div class="r"><div class="l">${esc(r.town)} <small class="mute">${esc(r.river)}</small></div><div class="t ${r.total===max?"top":""}"><i style="width:${r.total/max*100}%"></i></div><div class="v">${r.total}</div></div>`).join("")}</div>
+   <p class="mute" style="font-size:13px">Event = a run of consecutive days at or above the town's own 99th percentile of daily flow (2016–2025), counted in winters 1 Oct–31 Mar, 2016/17 to 2024/25.</p></div>
+   <div class="card"><h2>Events by winter</h2><div class="tw"><table><tr><th>Town</th>${wint.map(w=>`<th>${w}</th>`).join("")}<th>First 4</th><th>Last 4</th></tr>${a.ranking.map(r=>`<tr><td>${esc(r.town)}</td>${wint.map(w=>`<td>${heat(r.by_winter[w])}</td>`).join("")}<td>${r.first4}</td><td>${r.last4}</td></tr>`).join("")}</table></div></div>
+   <div class="card" style="border-left:5px solid var(--sby)"><h2>What this count cannot tell you</h2><p>${esc(a.limit)} A town whose flows rise slowly and stay high, such as the Shannon, can show few “events” while flooding for weeks, because a long run counts as one event. Use this ranking to open the conversation, not to close it.</p>
+   <button class="act p" id="askarea">Ask River Watch about this</button></div>`;
+  $("askarea").onclick=()=>{ tab("duty"); $("q").value="Which town should be first in line for a flood-defence study?"; $("ask").click(); };
+}
+
+function renderMethod(live){
+  const H=live.hist, T=Object.entries(H.towns);
+  $("method").innerHTML = `<div class="card"><h2>How it works</h2><p>Duty Officer / Area Manager → this page → <b>Google Sheet</b> (read live) + <b>Open-Meteo Flood API</b> (live forecast) + <b>Met Éireann warnings</b> (live) + stored <b>2016–2025 history summary</b> → code applies the Flood Plan → <b>Claude</b> (your key, browser only) explains the results. Code computes; the AI explains.</p></div>
+   <div class="card"><h2>Sources</h2><table><tr><th>Source</th><th>Publisher</th><th>Address</th><th>Licence / attribution</th></tr>
+   <tr><td>River flow forecast &amp; history</td><td>Open-Meteo (GloFAS v4, Copernicus Emergency Management Service)</td><td>flood-api.open-meteo.com/v1/flood</td><td>CC BY 4.0 – Open-Meteo.com</td></tr>
+   <tr><td>Weather warnings</td><td>Met Éireann</td><td>met.ie/Open_Data/json/warning_IRELAND.json</td><td>CC BY 4.0 – Met Éireann; warnings must be kept unaltered and current</td></tr>
+   <tr><td>Team Sheet</td><td>Our own Google Sheet</td><td>docs.google.com/spreadsheets/d/${SHEET_ID}</td><td>Fictional team data</td></tr>
+   <tr><td>AI model</td><td>Anthropic – ${esc($("model").value)}</td><td>api.anthropic.com</td><td>Price $0.10 / $0.50 per million input / output tokens (checked 26 Nov 2026)</td></tr></table></div>
+   <div class="card"><h2>Points and thresholds (stored once from ${esc(H.period)})</h2><div class="tw"><table><tr><th>Town</th><th>River</th><th>Lat</th><th>Lon</th><th>Mean flow</th><th>Median</th><th>95th</th><th>99th</th><th>Max</th><th>Events</th></tr>${T.map(([t,h])=>`<tr><td>${esc(t)}</td><td>${esc(h.river)}</td><td>${h.lat}</td><td>${h.lon}</td><td>${h.mean}</td><td>${h.median}</td><td>${h.p95}</td><td>${h.p99}</td><td>${h.max}</td><td>${h.events_total}</td></tr>`).join("")}</table></div>
+   <p class="mute" style="font-size:13px">${esc(H.percentile_method)}. GloFAS is a modelled 5 km grid, not a gauge: values are indicative and can differ from gauged flows (the Shannon in particular reads lower than gauge records).</p></div>
+   <div class="card"><h2>Matching warnings to counties</h2><p>Met Éireann names counties by codes (e.g. Cork EI04, Tipperary EI26, Westmeath EI29, Roscommon EI24, Leitrim EI14, Clare EI03, Wexford EI30). The page reads each town's county from the Sheet and any second county from its notes (Athlone → Westmeath + Roscommon; Carrick-on-Shannon → Leitrim + Roscommon), then looks for orange or red <i>Rain</i> warnings covering those codes that start within the next 48 hours and have not expired. Yellow is mentioned only.</p></div>
+   <div class="card"><h2>Key handling</h2><p>Your Anthropic key is stored only in your browser's localStorage, sent only to api.anthropic.com, and is never in this repository or page source. Set a small spend limit and turn auto top-up off with your provider.</p></div>`;
+}
+
+function tab(n){ document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.tab===n)); ["duty","area","method","settings"].forEach(s=>$(s).hidden=s!==n); if(n==="duty"&&MAP)setTimeout(()=>MAP.invalidateSize(),50); }
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>tab(b.dataset.tab));
+
+async function refresh(){
+  $("status").className="mute"; $("status").textContent="Reading Sheet, flow forecasts and Met Éireann warnings…";
+  LIVE = await loadLive(); EV = evaluate(LIVE);
+  renderPlan(EV,LIVE); $("working").innerHTML=renderWorking(EV,LIVE); renderArea(LIVE); renderMethod(LIVE);
+  $("status").textContent="";
+  return {live:LIVE, ev:EV};
+}
+
+function addMsg(role, html, meta){ const d=document.createElement("div"); d.className="msg "+role; d.innerHTML=html+(meta?`<div class="meta">${esc(meta)}</div>`:""); $("msgs").appendChild(d); $("msgs").scrollTop=1e9; return d; }
+
+async function ask(question){
+  const key=localStorage.getItem("rw_key");
+  addMsg("user",esc(question)); $("ask").disabled=true;
+  const bot=addMsg("bot",'<span class="dots2"><i></i><i></i><i></i></span> reading live data…');
+  try{
+    const {live,ev}=await refresh();
+    const scn=parseScenario(question,live), scnEv=scn?evaluate(live,scn):null;
+    if(scnEv){ $("working").innerHTML = `<p><span class="chip">WHAT-IF</span> Scenario ${esc(JSON.stringify(scn))} m³/s (not the real plan):</p>`+renderWorking(scnEv,live)+`<p class="mute">Real plan is shown at the top of the page.</p>`; }
+    if(!key) throw new Error("Paste and save your Anthropic key under Settings · key to ask the AI. The plan above is already computed from live data without it.");
+    const brief=t=>({town:t.town,county_names_used:t.counties,river:t.river,forecast_daily:t.forecast,forecast_peak:t.forecast_peak,peak_date:t.peak_date,peak_used:t.peak_used,peak_source:t.peak_source,p95:t.p95,p99:t.p99,pct_over_p99:t.pct_over_p99,warnings_in_next_48h:t.warnings,warning_top:t.warning_top,base_level:t.base_level,final_level:t.level,reasons:t.reasons,barrier:t.barrier_note,crew:t.crew,action:t.action,flag_area_manager:t.flag_area_manager,rehearsal_values_used:t.rehearsal,sheet_notes:t.notes});
+    const facts={generated_at:ev.at,timezone:"UTC timestamp; forecast days are Europe/Dublin dates",sources:{sheet:"Team Google Sheet (live)",forecast:"Open-Meteo Flood API (GloFAS), CC BY 4.0",warnings:"Met Éireann open data warning_IRELAND.json (CC BY 4.0)",history:"Open-Meteo Flood API GloFAS reanalysis 2016-01-01..2025-12-31, summarised once"},
+      active_warnings_nationwide:live.warnings.length,resource_check:{note:"Our own assumption, not in the Flood Plan: flags = no barrier set, no crew able to reach, notes mention repair/loan, pumps/sandbags/staff at or below 70% of team median, or high flood history with below-median resources",team_median:RES.med,towns:RES.towns.map(t=>({town:t.town,resources:t.values,flags:t.flags.map(x=>x.text),crews_able_to_reach:t.crews_able}))},real_plan:{towns:ev.towns.map(brief),crews:ev.crews},scenario:scnEv?{overrides_m3s:scn,plan:{towns:scnEv.towns.map(brief),crews:scnEv.crews}}:null,
+      area_manager:areaManager(live.hist),history_summary:Object.fromEntries(Object.entries(live.hist.towns).map(([k,h])=>[k,{river:h.river,lat:h.lat,lon:h.lon,mean:h.mean,p95:h.p95,p99:h.p99,events_by_winter:h.events_by_winter}]))};
+    const msgs=[...history.slice(-4),{role:"user",content:`QUESTION: ${question}\n\nFACTS (JSON, computed live by code):\n${JSON.stringify(facts)}`}];
+    bot.innerHTML='<span class="dots2"><i></i><i></i><i></i></span> asking the AI…';
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:$("model").value.trim()||"claude-haiku-5-5",max_tokens:1800,system:SYSTEM,messages:msgs})});
+    const data=await res.json(); if(!res.ok) throw new Error("AI provider: "+(data.error?.message||res.status));
+    const text=data.content.filter(b=>b.type==="text").map(b=>b.text).join("\n");
+    history.push({role:"user",content:`QUESTION: ${question}`},{role:"assistant",content:text});
+    const u=data.usage||{}, cost=((u.input_tokens||0)*PRICE_IN+(u.output_tokens||0)*PRICE_OUT)/1e6, n=(+localStorage.getItem("rw_count")||0)+1; localStorage.setItem("rw_count",n);
+    bot.innerHTML=md(text)+`<div class="meta">Data read ${esc(live.fetchedAt.toLocaleTimeString())} · tokens ${u.input_tokens}/${u.output_tokens} · ≈ $${cost.toFixed(5)} this answer · ${n} question(s) from this browser · full working below</div>`;
+  }catch(e){ bot.innerHTML=`<span class="err">${esc(e.message)}</span>`; }
+  finally{ $("ask").disabled=false; $("msgs").scrollTop=1e9; }
+}
+
+function keyState(){ $("keystate").textContent = localStorage.getItem("rw_key") ? "✔ A key is saved in this browser only." : "No key saved yet."; }
 $("save").onclick=()=>{ const v=$("key").value.trim(); if(v){localStorage.setItem("rw_key",v);$("key").value="";} keyState(); };
 $("forget").onclick=()=>{ localStorage.removeItem("rw_key"); $("key").value=""; keyState(); };
-$("ask").onclick=()=>{ const q=$("q").value.trim(); if(q) ask(q); };
+$("ask").onclick=()=>{ const q=$("q").value.trim(); if(q){ $("q").value=""; ask(q);} };
 $("q").addEventListener("keydown",e=>{ if(e.key==="Enter") $("ask").click(); });
-$("noai").onclick=()=>ask("What is tonight's plan?",false);
-document.querySelectorAll("button[data-q]").forEach(b=>b.onclick=()=>{ $("q").value=b.dataset.q; ask(b.dataset.q); });
+$("refresh").onclick=()=>refresh().catch(e=>{$("status").className="err";$("status").textContent=e.message});
+document.querySelectorAll(".qchip").forEach(b=>b.onclick=()=>ask(b.dataset.q));
 keyState();
+refresh().catch(e=>{ $("banner").className="b-bar"; $("banner").innerHTML=`<div class="bigicon">⚠️</div><div><div class="verdict">Could not read live data</div><div class="action">${esc(e.message)}</div></div>`; });
 </script>
 </body>
 </html>
